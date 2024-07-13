@@ -1,13 +1,5 @@
 import requests
-from bs4 import BeautifulSoup
 import json
-
-"""
-main: https://apis.roblox.com/explore-api/v1/get-sorts?sessionId=d
-populares: https://apis.roblox.com/explore-api/v1/get-sort-content?sessionId=d&sortId=Top_Trending_V2 
-search:https://apis.roblox.com/search-api/omni-search?searchQuery={query}&pageToken={token}&sessionId=d&pageType=all
-place-info: https://games.roblox.com/v1/games/multiget-place-details?placeIds={}
-"""
 
 def query_data(query_item : str, pages_ammount : int):
     token = ""
@@ -20,10 +12,26 @@ def query_data(query_item : str, pages_ammount : int):
     return pages
 
 def query_populars():
+    response = requests.get("https://apis.roblox.com/explore-api/v1/get-sort-content?sessionId=d&sortId=Top_Trending_V2")
+    response_data = json.loads(response.content)
+    return response_data["games"]
+
+def query_main():
+    response = requests.get("https://apis.roblox.com/explore-api/v1/get-sorts?sessionId=d")
+    response_data = json.loads(response.content)
+    data = []
+    for i in response_data["sorts"]:
+        data.append(i["games"])
+    return data
 
 
+def query_placeInfo(root_id):
+    response = requests.get(f"https://games.roblox.com/v1/games/multiget-place-details?placeIds={root_id}")
+    response_data = json.loads(response.content)
+    return response_data
 
+def get_thumbnail(universe_id):
+    response = requests.get(f"https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds={universe_id}&defaults=true&size=768x432&format=Png&isCircular=false")
+    response_data = json.loads(response.content)
+    return response_data['data'][0]["thumbnails"][0]["imageUrl"]
 
-with open("teste.json", 'w') as file:
-    for i in query_data("tycoon", 2):
-        file.write(json.dumps(i))
