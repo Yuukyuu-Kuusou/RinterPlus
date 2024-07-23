@@ -19,7 +19,7 @@ class GameCard(ttk.Frame):
         # Load image
 
         image = self.image
-        image = image.resize((210, 100))  # Resize image to 80x80 pixels
+        image = image.resize((210, 100))
         photo = ImageTk.PhotoImage(image)
 
         # Image widget
@@ -57,7 +57,6 @@ class GameCatalog(ttk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        # Create a canvas and a vertical scrollbar
         canvas = ttk.Canvas(self)
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
@@ -131,21 +130,29 @@ def query_data(query_item : str, pages_ammount : int):
         response = requests.get(f"https://apis.roblox.com/search-api/omni-search?searchQuery={query_item}&pageToken={token}&sessionId=d&pageType=all")
         response_data = json.loads(response.content)
         token = response_data["nextPageToken"]
-        pages.append(response_data["searchResults"])
-    return pages
+        pages += response_data["searchResults"]
+    result = []
+    for i in pages:
+        result.append(i["contents"][0])
+    return result
 
 def query_populars():
     response = requests.get("https://apis.roblox.com/explore-api/v1/get-sort-content?sessionId=d&sortId=Top_Trending_V2")
     response_data = json.loads(response.content)
     return response_data["games"]
 
-def query_main():
-    response = requests.get("https://apis.roblox.com/explore-api/v1/get-sorts?sessionId=d")
-    response_data = json.loads(response.content)
-    data = []
-    for i in response_data["sorts"]:
-        data.append(i["games"])
-    return data
+def query_main(pages_ammount):
+    token = ""
+    pages = []
+    for i in range(pages_ammount):
+        response = requests.get(f"https://apis.roblox.com/explore-api/v1/get-sorts?sessionId=d&sortsPageToken={token}")
+        response_data = json.loads(response.content)
+        token = response_data["nextSortsPageToken"]
+        pages += response_data["sorts"]
+    result = []
+    for i in pages:
+        result += i["games"]
+    return result
 
 
 def query_placeInfo(root_id):
@@ -160,6 +167,10 @@ def get_thumbnail(universe_id):
 
 def get_image(url):
     return Image.open(requests.get(url, stream=True).raw)
+
+def sort_data(data, reversed):
+        data = sorted(data, key=lambda x: x[0], reverse=reversed)
+        return [i[1] for i in data]
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
